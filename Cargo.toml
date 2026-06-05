@@ -2,6 +2,8 @@
 name = "emtui"
 version = "0.1.0"
 edition = "2024"
+description = "A terminal user interface for buses operated by EMT-Madrid"
+license = "MIT"
 
 [dependencies]
 dirs = "6.0.0"
