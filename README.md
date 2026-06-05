@@ -19,7 +19,7 @@ Line 83    BARRIO DE LA PAZ          14m
 
 ## Installation
 1. Create [EMT-Madrid account](mobilitylabs.emtmadrid.es)
-2. Grab the source code and build it with cargo or download the latest binary release (cargo crate releasing soon)
+2. Get the binary crate with `cargo install emtui` or download the source code and build it with `cargo build --release`
 
 ## Usage
 - Use `emtui <bus-stop-code>` to get the two next arrivals of every bus in the stop
