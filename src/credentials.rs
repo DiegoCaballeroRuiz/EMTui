@@ -70,7 +70,7 @@ fn save_config(credentials: &Credentials) -> Result<(), String> {
     // Create and write file with config
     std::fs::write(
         config_path,
-        format!("{}\n{}", &credentials.email, &credentials.password),
+        format!("{}\n{}", &credentials.email.trim(), &credentials.password.trim()),
     ).map_err(|e| e.to_string())?;
 
     // Confirm that credentials were saved
