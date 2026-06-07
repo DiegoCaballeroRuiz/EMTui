@@ -1,4 +1,4 @@
-# EMTui 0.1
+# EMTui 0.1.1
 EMTui is a terminal user interface for buses operated by "EMT Madrid"
 
 This is an example of the output:
