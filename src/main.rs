@@ -59,7 +59,7 @@ fn run(flags: Flags) {
 }
 
 fn login(credentials: Credentials) -> Result<String, String> {
-    // Create a client (like opening a browser)
+    // Create a client
     let client = reqwest::blocking::Client::new();
 
     // Build and send the request
@@ -84,12 +84,12 @@ fn login(credentials: Credentials) -> Result<String, String> {
 }
 
 fn get_arrivals(token: String, flags: Flags) -> Result<serde_json::Value, String> {
-    // Create a client (like opening a browser)
+    // Create a client
     let client = reqwest::blocking::Client::new();
 
     // Calculate the url to get the info
     let stop_id = flags.stop_code;
-    let url = match &flags.bus_filter {
+    let url = match flags.bus_filter {
         Some(line) => format!(
             "https://openapi.emtmadrid.es/v2/transport/busemtmad/stops/{stop_id}/arrives/{line}/"
         ),
@@ -120,11 +120,12 @@ fn get_arrivals(token: String, flags: Flags) -> Result<serde_json::Value, String
 
 fn display(arrivals: &serde_json::Value) -> Result<(), String> {
     // Print stop name and separator
-    let stop_name = arrivals["data"][0]["StopInfo"][0]["stopName"]
-        .as_str()
-        .unwrap_or("Unknown stop");
-    println!("{stop_name}");
-    println!("{}", "─".repeat(40));
+    if let Some(stop_name) = arrivals["data"][0]["StopInfo"][0]["stopName"].as_str() {
+        println!("{stop_name}");
+        println!("{}", "─".repeat(40));
+    } else {
+        return Err("Stop does not exist".to_owned());
+    }
 
     // Print every bus in the data array
     if let Some(buses) = arrivals["data"][0]["Arrive"].as_array() {
@@ -151,6 +152,9 @@ fn display(arrivals: &serde_json::Value) -> Result<(), String> {
                 );
             }
         }
+    }
+    else {
+        println!("No arrivals expected");
     }
 
     Ok(())

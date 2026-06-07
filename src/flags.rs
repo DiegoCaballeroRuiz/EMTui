@@ -36,9 +36,9 @@ impl Flags {
                 None
             };
 
-        return Ok(Flags {
+        Ok(Flags {
             stop_code,
             bus_filter,
-        });
+        })
     }
 }
