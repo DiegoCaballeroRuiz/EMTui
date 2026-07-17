@@ -41,21 +41,66 @@ fn run(flags: Flags) {
         }
     };
 
-    let arrivals = match get_arrivals(token, flags) {
-        Ok(arrivals) => arrivals,
-        Err(e) => {
-            eprintln!("ERROR: {}", e);
-            exit(1);
-        }
+    let result = match flags {
+        Flags::Display {
+            stop_code,
+            bus_filter,
+        } => display(token, stop_code, bus_filter),
+        Flags::List { search_pattern } => list(token, search_pattern),
     };
 
-    match display(&arrivals) {
-        Ok(_) => (),
-        Err(e) => {
-            eprintln!("ERROR: {}", e);
-            exit(1);
+    if let Err(e) = result {
+        eprintln!("ERROR: {}", e);
+    }
+}
+
+fn display(token: String, stop_id: String, bus_filter: Option<String>) -> Result<(), String> {
+    let arrivals = get_arrivals(token, stop_id, bus_filter)?;
+    display_arrivals(&arrivals)
+}
+
+fn list(token: String, search_pattern: Option<String>) -> Result<(), String> {
+    let stops = get_stops(token)?;
+    list_stops(&stops, search_pattern)
+}
+
+fn get_stops(token: String) -> Result<serde_json::Value, String> {
+    // Create a client
+    let client = reqwest::blocking::Client::new();
+
+    // Get url
+    let url = "https://openapi.emtmadrid.es/v1/transport/busemtmad/stops/list/";
+
+    // Build and send the request
+    let response = client
+        .post(url)
+        .header("accessToken", token)
+        .send()
+        .map_err(|e| e.to_string())?;
+
+    // Parse the response body as JSON
+    let stops: serde_json::Value = response.json().map_err(|e| e.to_string())?;
+
+    // Return json
+    Ok(stops)
+}
+
+fn list_stops(stops: &serde_json::Value, search_pattern: Option<String>) -> Result<(), String> {
+    let pattern = search_pattern.unwrap_or("".to_owned()).to_lowercase();
+
+    // Print stop name and separator
+    if let Some(data) = stops["data"].as_array() {
+        for stop in data {
+            if let (Some(name), Some(code)) = (stop["name"].as_str(), stop["node"].as_str()) {
+                let pattern_is_contained = name.to_lowercase().contains(&pattern);
+                if pattern_is_contained {
+                    println!("{:<45}-> {:<5}", name, code);
+                }
+            }
         }
     }
+
+    Ok(())
 }
 
 fn login(credentials: Credentials) -> Result<String, String> {
@@ -83,13 +128,16 @@ fn login(credentials: Credentials) -> Result<String, String> {
     Ok(token)
 }
 
-fn get_arrivals(token: String, flags: Flags) -> Result<serde_json::Value, String> {
+fn get_arrivals(
+    token: String,
+    stop_id: String,
+    bus_filter: Option<String>,
+) -> Result<serde_json::Value, String> {
     // Create a client
     let client = reqwest::blocking::Client::new();
 
     // Calculate the url to get the info
-    let stop_id = flags.stop_code;
-    let url = match flags.bus_filter {
+    let url = match bus_filter {
         Some(line) => format!(
             "https://openapi.emtmadrid.es/v2/transport/busemtmad/stops/{stop_id}/arrives/{line}/"
         ),
@@ -118,7 +166,7 @@ fn get_arrivals(token: String, flags: Flags) -> Result<serde_json::Value, String
     Ok(arrivals)
 }
 
-fn display(arrivals: &serde_json::Value) -> Result<(), String> {
+fn display_arrivals(arrivals: &serde_json::Value) -> Result<(), String> {
     // Print stop name and separator
     if let Some(stop_name) = arrivals["data"][0]["StopInfo"][0]["stopName"].as_str() {
         println!("{stop_name}");
@@ -152,8 +200,7 @@ fn display(arrivals: &serde_json::Value) -> Result<(), String> {
                 );
             }
         }
-    }
-    else {
+    } else {
         println!("No arrivals expected");
     }
 
@@ -164,6 +211,8 @@ fn print_help_message() {
     print!(
         "Usage:
     emtui <bus-stop>: For info on all buses of a stop
-    emtui <bus-stop> -B <bus-number>: For the two next appereances of a bus in a stop"
+    emtui <bus-stop> -B <bus-number>: For the two next appereances of a bus in a stop
+    emtui -l/--list (pattern): For a list of bus stops containing said pattern as part of the name
+                               leave the pattern empty for a list of all stops"
     );
 }
