@@ -1,7 +1,7 @@
-# EMTui 0.1.1
+# EMTui 0.2
 EMTui is a terminal user interface for buses operated by "EMT Madrid"
 
-This is an example of the output:
+It can display buses that will arrive to a stop:
 ```
 emtui 3688
 
@@ -17,6 +17,19 @@ Line 82    PITIS                     11m
 Line 83    BARRIO DE LA PAZ          14m
 ```
 
+Or get the stop number of a certain stop via pattern matchin:
+```
+emtui -l "retiro"
+
+O Donnell-Retiro                             -> 158
+O Donnell-Retiro                             -> 159
+Alcalá-Retiro                                -> 174
+Junta Municipal Retiro                       -> 1406
+Junta Municipal Retiro                       -> 1407
+Casón del Buen Retiro                        -> 2172
+Casón del Buen Retiro                        -> 2173
+```
+
 ## Installation
 1. Create [EMT-Madrid account](mobilitylabs.emtmadrid.es)
 2. Get the binary crate with `cargo install emtui` or download the source code and build it with `cargo build --release`
@@ -24,11 +37,13 @@ Line 83    BARRIO DE LA PAZ          14m
 ## Usage
 - Use `emtui <bus-stop-code>` to get the two next arrivals of every bus in the stop
 - Run with the `--bus` or `-B` flags and specify a `<bus-number>` afterwards to only get arrivals of said bus
+- If you don't know a stop code but you know its name, try running `emtui -l <stop-name>`
 
 Examples:
 ```
 emtui 3688
 emtui 3688 --bus 133
+emtui -l "Moncloa"
 ```
 
 ## Notes
