@@ -1,4 +1,4 @@
-# EMTui 0.2
+# EMTui 0.2.1
 EMTui is a terminal user interface for buses operated by "EMT Madrid"
 
 It can display buses that will arrive to a stop:
@@ -19,15 +19,16 @@ Line 83    BARRIO DE LA PAZ          14m
 
 Or get the stop number of a certain stop via pattern matchin:
 ```
-emtui -l "retiro"
+emtui -l "Tirso"
 
-O Donnell-Retiro                             -> 158
-O Donnell-Retiro                             -> 159
-Alcalá-Retiro                                -> 174
-Junta Municipal Retiro                       -> 1406
-Junta Municipal Retiro                       -> 1407
-Casón del Buen Retiro                        -> 2172
-Casón del Buen Retiro                        -> 2173
+Instituto Tirso de Molina                    -> 1011
+Instituto Tirso de Molina                    -> 1012
+Mercado Tirso de Molina                      -> 1453
+Tirso de Molina                              -> 1919
+Colegiata-Tirso de Molina                    -> 51146
+Tirso de Molina                              -> 51229
+Conde de Romanones-Tirso de Molina           -> 51231
+Conde de Romanones-Tirso de Molina           -> 51232
 ```
 
 ## Installation

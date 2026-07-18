@@ -5,7 +5,7 @@ pub enum Flags {
     },
 
     List {
-        search_pattern: Option<String>
+        search_pattern: Option<String>,
     },
 }
 
@@ -16,19 +16,25 @@ impl Flags {
             return Err("Usage");
         }
 
+        // If first argument is -l or --list, enter listing mode
+        if args[1] == "-l" || args[1] == "--list" {
+            let stop_name = if args.len() >= 3 {
+                Some(args[2].clone())
+            } else {
+                None
+            };
+
+            return Ok(Flags::List {
+                search_pattern: stop_name,
+            });
+        }
+
+        //Everything below is "display mode"
+        
         // Check that the stop is a parseable into a number
         if args[1].parse::<u32>().is_err() {
-            if args[1] == "-l" || args[1] == "--list" {
-                let stop_name = if args.len() >= 3 {
-                    Some(args[2].clone())
-                } else {
-                    None
-                };
-
-                return Ok(Flags::List {search_pattern: stop_name });
-            } else {
-                return Err("Stop code must be a number");
-            }
+        } else {
+            return Err("Stop code must be a number");
         }
         // Otherwise save the stop argument
         let stop_code = args[1].clone();

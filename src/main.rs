@@ -69,11 +69,11 @@ fn get_stops(token: String) -> Result<serde_json::Value, String> {
     let client = reqwest::blocking::Client::new();
 
     // Get url
-    let url = "https://openapi.emtmadrid.es/v1/transport/busemtmad/stops/list/";
+    const URL : &str = "https://openapi.emtmadrid.es/v1/transport/busemtmad/stops/list/";
 
     // Build and send the request
     let response = client
-        .post(url)
+        .post(URL)
         .header("accessToken", token)
         .send()
         .map_err(|e| e.to_string())?;
@@ -86,9 +86,10 @@ fn get_stops(token: String) -> Result<serde_json::Value, String> {
 }
 
 fn list_stops(stops: &serde_json::Value, search_pattern: Option<String>) -> Result<(), String> {
+    // Get pattern to match
     let pattern = search_pattern.unwrap_or("".to_owned()).to_lowercase();
 
-    // Print stop name and separator
+    // Print stops that match the pattern
     if let Some(data) = stops["data"].as_array() {
         for stop in data {
             if let (Some(name), Some(code)) = (stop["name"].as_str(), stop["node"].as_str()) {
