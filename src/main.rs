@@ -6,21 +6,21 @@ use flags::Flags;
 mod credentials;
 use credentials::{Credentials, get_credentials};
 
+use crate::flags::ParseFlagsError;
+
 fn main() {
-    let args: Vec<String> = env::args().collect();
-    let flags = Flags::parse(args);
+    let flags = Flags::parse(env::args());
 
     match flags {
         Ok(flags) => run(flags),
-        Err(msg) => {
-            if msg == "Usage" {
-                print_help_message();
-                exit(0);
-            } else {
-                eprintln!("ERROR: {}", msg);
-                exit(1);
+        Err(err_type) => match err_type {
+            ParseFlagsError::Usage => print_help_message(),
+            ParseFlagsError::UnparseableStopNumber => eprintln!("Stop code must be a number"),
+            ParseFlagsError::UnkownFlag(flag) => eprintln!("Unknown flag \'{}\'", flag),
+            ParseFlagsError::BusWithoutNumber => {
+                eprintln!("-B or --bus flag requires a bus name argument")
             }
-        }
+        },
     }
 }
 
@@ -69,7 +69,7 @@ fn get_stops(token: String) -> Result<serde_json::Value, String> {
     let client = reqwest::blocking::Client::new();
 
     // Get url
-    const URL : &str = "https://openapi.emtmadrid.es/v1/transport/busemtmad/stops/list/";
+    const URL: &str = "https://openapi.emtmadrid.es/v1/transport/busemtmad/stops/list/";
 
     // Build and send the request
     let response = client

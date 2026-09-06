@@ -1,4 +1,4 @@
-# EMTui 0.2.1
+# EMTui 0.2.2
 EMTui is a terminal user interface for buses operated by "EMT Madrid"
 
 It can display buses that will arrive to a stop:
