@@ -1,4 +1,4 @@
-use std::{env, process::exit};
+use std::env;
 
 mod flags;
 use flags::Flags;
@@ -16,9 +16,9 @@ fn main() {
         Err(err_type) => match err_type {
             ParseFlagsError::Usage => print_help_message(),
             ParseFlagsError::UnparseableStopNumber => eprintln!("Stop code must be a number"),
-            ParseFlagsError::UnkownFlag(flag) => eprintln!("Unknown flag \'{}\'", flag),
+            ParseFlagsError::UnkownFlag(flag) => eprintln!("Unknown flag \'{flag}\'"),
             ParseFlagsError::BusWithoutNumber => {
-                eprintln!("-B or --bus flag requires a bus name argument")
+                eprintln!("-B or --bus flag requires a bus name argument");
             }
         },
     }
@@ -28,16 +28,16 @@ fn run(flags: Flags) {
     let credentials = match get_credentials() {
         Ok(credentials) => credentials,
         Err(e) => {
-            eprintln!("ERROR: {}", e);
-            exit(1);
+            eprintln!("ERROR: {e}");
+            return;
         }
     };
 
     let token = match login(credentials) {
         Ok(t) => t,
         Err(e) => {
-            eprintln!("ERROR: {}", e);
-            exit(1);
+            eprintln!("ERROR: {e}");
+            return;
         }
     };
 
@@ -45,31 +45,33 @@ fn run(flags: Flags) {
         Flags::Display {
             stop_code,
             bus_filter,
-        } => display(token, stop_code, bus_filter),
+        } => display(token, &stop_code, bus_filter),
         Flags::List { search_pattern } => list(token, search_pattern),
     };
 
     if let Err(e) = result {
-        eprintln!("ERROR: {}", e);
+        eprintln!("ERROR: {e}");
     }
 }
 
-fn display(token: String, stop_id: String, bus_filter: Option<String>) -> Result<(), String> {
+fn display(token: String, stop_id: &str, bus_filter: Option<String>) -> Result<(), String> {
     let arrivals = get_arrivals(token, stop_id, bus_filter)?;
     display_arrivals(&arrivals)
 }
 
 fn list(token: String, search_pattern: Option<String>) -> Result<(), String> {
     let stops = get_stops(token)?;
-    list_stops(&stops, search_pattern)
+    list_stops(&stops, search_pattern);
+
+    Ok(())
 }
 
 fn get_stops(token: String) -> Result<serde_json::Value, String> {
-    // Create a client
-    let client = reqwest::blocking::Client::new();
-
     // Get url
     const URL: &str = "https://openapi.emtmadrid.es/v1/transport/busemtmad/stops/list/";
+
+    // Create a client
+    let client = reqwest::blocking::Client::new();
 
     // Build and send the request
     let response = client
@@ -85,9 +87,9 @@ fn get_stops(token: String) -> Result<serde_json::Value, String> {
     Ok(stops)
 }
 
-fn list_stops(stops: &serde_json::Value, search_pattern: Option<String>) -> Result<(), String> {
+fn list_stops(stops: &serde_json::Value, search_pattern: Option<String>) {
     // Get pattern to match
-    let pattern = search_pattern.unwrap_or("".to_owned()).to_lowercase();
+    let pattern = search_pattern.unwrap_or_default().to_lowercase();
 
     // Print stops that match the pattern
     if let Some(data) = stops["data"].as_array() {
@@ -95,13 +97,11 @@ fn list_stops(stops: &serde_json::Value, search_pattern: Option<String>) -> Resu
             if let (Some(name), Some(code)) = (stop["name"].as_str(), stop["node"].as_str()) {
                 let pattern_is_contained = name.to_lowercase().contains(&pattern);
                 if pattern_is_contained {
-                    println!("{:<45}-> {:<5}", name, code);
+                    println!("{name:<45}-> {code:<5}");
                 }
             }
         }
     }
-
-    Ok(())
 }
 
 fn login(credentials: Credentials) -> Result<String, String> {
@@ -122,7 +122,7 @@ fn login(credentials: Credentials) -> Result<String, String> {
     // Dig out the token
     let token = json["data"][0]["accessToken"]
         .as_str()
-        .ok_or("Token not found in response".to_string())?
+        .ok_or_else(|| "Token not found in response".to_string())?
         .to_string();
 
     // Return token
@@ -131,21 +131,16 @@ fn login(credentials: Credentials) -> Result<String, String> {
 
 fn get_arrivals(
     token: String,
-    stop_id: String,
+    stop_id: &str,
     bus_filter: Option<String>,
 ) -> Result<serde_json::Value, String> {
     // Create a client
     let client = reqwest::blocking::Client::new();
 
     // Calculate the url to get the info
-    let url = match bus_filter {
-        Some(line) => format!(
-            "https://openapi.emtmadrid.es/v2/transport/busemtmad/stops/{stop_id}/arrives/{line}/"
-        ),
-        None => {
-            format!("https://openapi.emtmadrid.es/v2/transport/busemtmad/stops/{stop_id}/arrives/")
-        }
-    };
+    let url = bus_filter.map_or_else(|| format!("https://openapi.emtmadrid.es/v2/transport/busemtmad/stops/{stop_id}/arrives/"), |line| format!(                                       
+        "https://openapi.emtmadrid.es/v2/transport/busemtmad/stops/{stop_id}/arrives/{line}/"                                                                                      
+    ));
 
     // Build and send the request
     let response = client
@@ -189,16 +184,13 @@ fn display_arrivals(arrivals: &serde_json::Value) -> Result<(), String> {
 
             let seconds_remaining = bus["estimateArrive"]
                 .as_u64()
-                .ok_or("estimateArrive missing or not a number".to_string())?;
+                .ok_or_else(|| "estimateArrive missing or not a number".to_string())?;
 
             if seconds_remaining < 60 {
-                println!("Line {:<5} {:<25} <1m", line, destination);
+                println!("Line {line:<5} {destination:<25} <1m");
             } else {
                 let minutes_remaining = seconds_remaining / 60;
-                println!(
-                    "Line {:<5} {:<25} {}m",
-                    line, destination, minutes_remaining
-                );
+                println!("Line {line:<5} {destination:<25} {minutes_remaining}m");
             }
         }
     } else {

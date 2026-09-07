@@ -4,13 +4,12 @@ pub struct Credentials {
 }
 
 pub fn get_credentials() -> Result<Credentials, String> {
-    match load_config() {
-        Ok(credentials) => Ok(credentials),
-        Err(_) => {
-            let credentials = prompt_credentials()?;
-            save_config(&credentials)?;
-            Ok(credentials)
-        }
+    if let Ok(credentials) = load_config() {
+        Ok(credentials)
+    } else {
+        let credentials = prompt_credentials()?;
+        save_config(&credentials)?;
+        Ok(credentials)
     }
 }
 
@@ -63,13 +62,22 @@ fn save_config(credentials: &Credentials) -> Result<(), String> {
         .join("credentials.txt");
 
     // Create directory in case it doesent exist
-    std::fs::create_dir_all(config_path.parent().unwrap()).map_err(|e| e.to_string())?;
+    if let Some(dir) = config_path.parent() {
+        std::fs::create_dir(dir).map_err(|e| e.to_string())?;
+    } else {
+        return Err("Couldn't find config path".to_string());
+    }
 
     // Create and write file with config
     std::fs::write(
         config_path,
-        format!("{}\n{}", credentials.email.trim(), credentials.password.trim()),
-    ).map_err(|e| e.to_string())?;
+        format!(
+            "{}\n{}",
+            credentials.email.trim(),
+            credentials.password.trim()
+        ),
+    )
+    .map_err(|e| e.to_string())?;
 
     // Confirm that credentials were saved
     println!("Credentials saved!");

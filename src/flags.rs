@@ -24,7 +24,7 @@ impl Flags {
         // If first argument is -l or --list, enter listing mode
         if arg_1 == "-l" || arg_1 == "--list" {
             let search_pattern = args.next();
-            return Ok(Flags::List { search_pattern });
+            return Ok(Self::List { search_pattern });
         }
 
         //Everything below is "display mode"
@@ -39,7 +39,7 @@ impl Flags {
 
         // If there are no flags, continue execution without bus fiter
         let Some(flag) = args.next() else {
-            return Ok(Flags::Display {
+            return Ok(Self::Display {
                 stop_code,
                 bus_filter: None,
             });
@@ -54,10 +54,10 @@ impl Flags {
         let bus_filter = args.next();
         if bus_filter.is_none() {
             return Err(ParseFlagsError::BusWithoutNumber);
-        };
+        }
 
         // Build flags using stop_code and bus_filter
-        Ok(Flags::Display {
+        Ok(Self::Display {
             stop_code,
             bus_filter,
         })
